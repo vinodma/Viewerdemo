@@ -8,11 +8,12 @@
 
         function(s) { //This function is passed an instance of Sigma s
             var g = document.querySelector('#graph2');
+			var elems;
 
             try {
                 Shiny.addCustomMessageHandler("commmemmsg",
                     function(message) {
-						var elems;
+						;
 						
                         JSON.parse(JSON.stringify(message), function(k, v) {
                             if (k == "id") {
@@ -57,7 +58,8 @@
 
             Shiny.addCustomMessageHandler("updategraph",
                 function(message) {
-
+					if(message=="clear")
+						elems=undefined
                     // to delete & refresh the graph
                     var g = document.querySelector('#graph2');
                     var p = g.parentNode;
@@ -76,7 +78,13 @@
                         function(new_s) {
                             //s.graph.kill();
                             new_s.graph.nodes().forEach(function(node, i, a) {
+								if (typeof(elems) != "undefined"){
+                                	if (elems.indexOf(node.label.toString()) > -1) {
+                                    node.color = "#FFD700";
+                                } 
 
+							}
+								else {
                                 switch (node.type) {
                                     case "Chemical":
                                         node.color = "#FF8800";
@@ -97,6 +105,7 @@
                                     default:
                                         break;
                                 }
+							}
                             });
 
                             //Call refresh to render the new graph
