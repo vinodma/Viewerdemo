@@ -27,7 +27,7 @@ function(input, output, session){
   observeEvent(input$reset_button, {
     getcommunity_from_graphdb(-1)
     observe({
-      session$sendCustomMessage(type = "updategraph",message="xyz")
+      session$sendCustomMessage(type = "updategraph",message="clear")
     })
     #global$viz_stack <- rstack()
     #global$viz_stack <- insert_top(global$viz_stack, list(graph, communities))
@@ -78,6 +78,7 @@ function(input, output, session){
     print(input$comm_id)
     global$currentCommId<-input$comm_id 
     getcommunity_from_graphdb(input$comm_id)
+    update_stats()
     observe({
       session$sendCustomMessage(type = "updategraph",message="xyz")
     })
@@ -89,7 +90,7 @@ function(input, output, session){
   output$graph_with_sigma <- renderUI({
     getcommunity_from_graphdb(-1)
     #makenetjson(data[[1]], "./www/data/current_graph.json", data[[2]]) 
-    #update_stats(data[[1]], data[[2]])
+    update_stats()
     
     observe({
       session$sendCustomMessage(type = "updategraph",message="")
@@ -99,15 +100,25 @@ function(input, output, session){
   })
   
   # update the summary stats
-  update_stats <- function(graph, is_comm_graph){
+  update_stats <- function(){
+    con <- file("./www/data/current_graph.json")
+    open(con)
+    line <- readLines(con, n = 1, warn = FALSE)
+    close(con)
+    x<-fromJSON(line)
+    edges<-x$edges[c('source','target')]
+    vertex_data<-x$nodes[c('id','name','type')]
+    graph <- graph_from_data_frame(edges, directed = FALSE, vertices = vertex_data)
+    
+    
     nodes <- get.data.frame(graph, what="vertices")
     nodes$degree <- degree(graph)
     nodes$pagerank <- page_rank(graph)$vector
-    if (is_comm_graph==TRUE){
-      colnames(nodes) <- c("Name", "Type", "Comm", "Size", "Degree", "PageRank")
-    } else {
-      colnames(nodes) <- c("Name", "Type", "Comm", "Degree", "PageRank")
-    }
+    #if (is_comm_graph==TRUE){
+      colnames(nodes) <- c("Name", "Type", "Degree", "PageRank")
+  #  } else {
+      #colnames(nodes) <- c("Name", "Type", "Comm", "Degree", "PageRank")
+   # }
     global$nodes <- nodes
   }
   
