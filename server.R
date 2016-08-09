@@ -7,7 +7,7 @@ library(rstackdeque)
 source("external/graph_utils.R", local = TRUE)
 source("external/makenetjson.R", local = TRUE)
 source("external/protein_label_dictionary.R",local = TRUE)
-mp <- getproteinlabeldict()
+
 #initial_data <- "./www/data/ctd.csv"
 #graph <- build_initial_graph(initial_data)
 #communities <- get_communities(graph)
@@ -39,10 +39,12 @@ function(input, output, session){
   })
   
   #Search button
- observeEvent(input$search_button,{
+  observeEvent(input$search_button,{
     searchelm <- input$searchentitiy
     lbllist <<- c()
+    withProgress(message = "Searching ...",value = 0,{
     getallparentforentity(searchelm)
+    })
     lbllist <- unique(lbllist)
     memcommunity<-paste(lbllist,collapse=",")
     memcommunity<-paste(searchelm,memcommunity,sep=",")
@@ -154,16 +156,57 @@ function(input, output, session){
     return(paste(c("Current Community", name)))
   })
   
-  output$pathway_distribution <- renderPlot({
-    # if(global$is_comm_graph == TRUE){
+  output$plotgraph1 <- DT::renderDataTable({
+
+    lf<-NULL
+    lbls<-NULL
+
+    if(is.null(mp))
+      mp <- getproteinlabeldict()
+
     if(global$currentCommId==-1)
       return (NULL)
-    lbllist <<- c(0)
+    finallist<-c()
+    lbllist <<- c()
+
+   protienDSpathway<<-data.frame()
+   sortedlabel<-NULL
    
     getrawentititesfromComm(global$currentCommId)
-    lbllist <- lbllist[-1] #get rid of the first zero in the list 
-    print(lbllist)
-    labelfreq <- table(lbllist)
+    labelfreq <- table(protienDSpathway)
+    z<-apply(labelfreq,1,sum)
+    sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
+    
+    
+  #print(sortedlabel)
+   
+   
+   table<-sortedlabel
+    
+  },
+  options = list(order = list(list(1, 'desc'))),
+  rownames = TRUE,
+  selection = "single")
+  
+  
+  output$plotgraph2 <- renderPlot({
+    # if(global$is_comm_graph == TRUE){
+    if(is.null(mp))
+      mp <- getproteinlabeldict()
+    
+    if(global$currentCommId==-1)
+      return (NULL)
+    finallist<-c()
+    lbllist <<- c()
+    
+    getrawentititesfromComm(global$currentCommId)
+    #lbllist <- lbllist[-1] #get rid of the first zero in the list 
+    for(lb in lbllist){
+      x<-strsplit(lb,split=" ")
+      y<-unlist(x)
+      finallist<-append(y,finallist)
+    }
+    labelfreq <- table(finallist)
     #lf <- order(labelfreq)[1:10]
     if(length(labelfreq) == 0)
       return (NULL)
