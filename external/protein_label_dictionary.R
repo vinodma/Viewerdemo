@@ -3,6 +3,11 @@ appendlabel<-function(x){
   if(!is.null(mp[[x]]))
   {
     lbllist<<-append(lbllist,mp[[x]])
+    
+    lbl<-strsplit(mp[[x]],split=" ")
+    lapply(lbl,function(y){new<-data.frame(Pathway=y,Protein=x);protienDSpathway<<-rbind(protienDSpathway,new)})
+  
+    
   }
   
 }
@@ -105,8 +110,16 @@ while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
   val<-unlist(dt[[1]][1])
   keys<-unlist(dt[[1]][-1])
   for(key in keys){
+    if(key %in% names(map)){
+     oldval <- map[[key]]
+     map[[key]] <- paste(oldval,val,sep=" ") 
+    }
+    else
+    {
     map[[key]] <- val
-  }
+    }
+    }
+    
   #results.list[[current.line]] <- toString(unlist(strsplit(line, split="\t")))
   current.line <- current.line + 1
 } 
