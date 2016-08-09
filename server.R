@@ -39,13 +39,13 @@ function(input, output, session){
   })
   
   #Search button
-  observeEvent(input$search_button,{
+ observeEvent(input$search_button,{
     searchelm <- input$searchentitiy
     lbllist <<- c()
     getallparentforentity(searchelm)
     lbllist <- unique(lbllist)
     memcommunity<-paste(lbllist,collapse=",")
-    print(lbllist)
+    memcommunity<-paste(searchelm,memcommunity,sep=",")
     #memcommunity=input$searchentitiy
     observe({
       session$sendCustomMessage(type = "commmemmsg" ,
