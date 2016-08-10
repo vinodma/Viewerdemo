@@ -49,13 +49,16 @@ body <- dashboardBody(
             tabPanel("Entities", DT::dataTableOutput("degree_table")),
             tabPanel("Degrees", plotlyOutput("degree_distribution")),
             tabPanel("PageRanks", plotlyOutput("pagerank_distribution")),
-            #tabPanel("Disease Pathway Info.", plotOutput("pathway_distribution"))
-            tabPanel("Disease Pathway Info.",fluidRow(
-              splitLayout(cellWidths = c("100%", "0%"), dataTableOutput("plotgraph1"))#, plotOutput("plotgraph2"))
-            ))
+            tabPanel("Disease Pathway Info.", 
+            tabBox(width=500,title="",id="pathinfo",
+                   tabPanel("Data",fluidRow(splitLayout(cellWidths = c("100%", "0%"), dataTableOutput("plotgraph1"))
+            )),
+            tabPanel("Heatmap",plotlyOutput("plotgraph2"))
+            )
+            
     )
   )
   
 )
-
+)
 dashboardPage(header, sidebar, body, skin = "blue")
