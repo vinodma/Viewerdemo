@@ -159,29 +159,31 @@ function(input, output, session){
   })
   
   output$plotgraph1 <- DT::renderDataTable({
-    
+    protienDSpathway<<-data.frame()
+    sortedlabel<-NULL
     lf<-NULL
     lbls<-NULL
     
+    withProgress(message = "Loading ...",value = 0,{
     if(is.null(mp))
       mp <<- getproteinlabeldict()
-    
+    })
     if(global$currentCommId==-1)
       return (NULL)
     finallist<-c()
     lbllist <<- c()
     
-    protienDSpathway<<-data.frame()
-    sortedlabel<-NULL
-    
+
+    withProgress(message = "Loading ...",value = 0,{
     getrawentititesfromComm(global$currentCommId)
+    })
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
     sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
     
     colnames(sortedlabel) <- colnames(labelfreq)
     #print(sortedlabel)
-    
+  
     
     table<-sortedlabel
     
@@ -191,7 +193,9 @@ function(input, output, session){
   
   
   output$plotgraph2 <- renderPlotly({ 
+    withProgress(message = "Loading ...",value = 0,{
     getrawentititesfromComm(global$currentCommId)
+    })
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
     sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
