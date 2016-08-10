@@ -16,6 +16,7 @@ source("external/protein_label_dictionary.R",local = TRUE)
 s2 <-rstack()
 s3 <- rstack()
 mp <<- NULL
+sortedlabel<-NULL
 function(input, output, session){ 
   global <- reactiveValues()
   global$is_comm_graph = TRUE
@@ -154,7 +155,7 @@ function(input, output, session){
   output$name <- renderText({
     name <- as.list(rev(global$name))
     name <- paste(name, collapse = "/", sep="/")
-    return(paste(c("Current Community", name)))
+    #return(paste(c("Current Community", name)))
   })
   
   output$plotgraph1 <- DT::renderDataTable({
@@ -176,9 +177,9 @@ function(input, output, session){
     getrawentititesfromComm(global$currentCommId)
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
-    sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
+    sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
     
-    
+    colnames(sortedlabel) <- colnames(labelfreq)
     #print(sortedlabel)
     
     
@@ -189,39 +190,12 @@ function(input, output, session){
   selection = "single")
   
   
-  output$plotgraph2 <- renderPlot({
-    # if(global$is_comm_graph == TRUE){
-    if(is.null(mp))
-      mp <- getproteinlabeldict()
-    
-    if(global$currentCommId==-1)
-      return (NULL)
-    finallist<-c()
-    lbllist <<- c()
-    
+  output$plotgraph2 <- renderPlotly({ 
     getrawentititesfromComm(global$currentCommId)
-    #lbllist <- lbllist[-1] #get rid of the first zero in the list 
-    for(lb in lbllist){
-      x<-strsplit(lb,split=" ")
-      y<-unlist(x)
-      finallist<-append(y,finallist)
-    }
-    labelfreq <- table(finallist)
-    #lf <- order(labelfreq)[1:10]
-    if(length(labelfreq) == 0)
-      return (NULL)
-    lf <- labelfreq[order(labelfreq,decreasing = T)[1:min(c(length(labelfreq),5))]]
-    others_cnt <- sum(labelfreq) - sum(lf)
-    lf["OTHERS"] <-others_cnt
-    pcts <- lapply(lf,function(z){round(100.0*z/sum(lf))})
-    pcts <- paste("(",pcts,"%",")",sep="")
-    lbls <- paste(pcts,names(lf))
-    return(pie(lf,labels = lbls))
-    #print(gsize(graph))
-    
-    
-    #}
-    
+    labelfreq <- table(protienDSpathway)
+    z<-apply(labelfreq,1,sum)
+    sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
+    plot_ly(z = sortedlabel, type = "heatmap",colorscale = "Hot") %>% layout(xaxis = list(title="Proteins"),yaxis=list(title="Disease Pathway"))
   })
   
 }
