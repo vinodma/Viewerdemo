@@ -15,6 +15,7 @@ source("external/protein_label_dictionary.R",local = TRUE)
 #s1 <- rstack()
 s2 <-rstack()
 s3 <- rstack()
+mp <<- NULL
 function(input, output, session){ 
   global <- reactiveValues()
   global$is_comm_graph = TRUE
@@ -43,7 +44,7 @@ function(input, output, session){
     searchelm <- input$searchentitiy
     lbllist <<- c()
     withProgress(message = "Searching ...",value = 0,{
-    getallparentforentity(searchelm)
+      getallparentforentity(searchelm)
     })
     lbllist <- unique(lbllist)
     memcommunity<-paste(lbllist,collapse=",")
@@ -86,7 +87,7 @@ function(input, output, session){
     })
   })
   
-
+  
   
   # render with sigma the current graph (in json)
   output$graph_with_sigma <- renderUI({
@@ -117,10 +118,10 @@ function(input, output, session){
     nodes$degree <- degree(graph)
     nodes$pagerank <- page_rank(graph)$vector
     #if (is_comm_graph==TRUE){
-      colnames(nodes) <- c("Name", "Type", "Degree", "PageRank")
-  #  } else {
-      #colnames(nodes) <- c("Name", "Type", "Comm", "Degree", "PageRank")
-   # }
+    colnames(nodes) <- c("Name", "Type", "Degree", "PageRank")
+    #  } else {
+    #colnames(nodes) <- c("Name", "Type", "Comm", "Degree", "PageRank")
+    # }
     global$nodes <- nodes
   }
   
@@ -157,34 +158,33 @@ function(input, output, session){
   })
   
   output$plotgraph1 <- DT::renderDataTable({
-
+    
     lf<-NULL
     lbls<-NULL
-
+    
     if(is.null(mp))
-      mp <- getproteinlabeldict()
-
+      mp <<- getproteinlabeldict()
+    
     if(global$currentCommId==-1)
       return (NULL)
     finallist<-c()
     lbllist <<- c()
-
-   protienDSpathway<<-data.frame()
-   sortedlabel<-NULL
-   
+    
+    protienDSpathway<<-data.frame()
+    sortedlabel<-NULL
+    
     getrawentititesfromComm(global$currentCommId)
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
     sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
     
     
-  #print(sortedlabel)
-   
-   
-   table<-sortedlabel
+    #print(sortedlabel)
+    
+    
+    table<-sortedlabel
     
   },
-  options = list(order = list(list(1, 'desc'))),
   rownames = TRUE,
   selection = "single")
   
