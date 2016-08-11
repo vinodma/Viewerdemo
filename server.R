@@ -179,13 +179,20 @@ function(input, output, session){
     })
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
-    sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
     
+    con <- file("test.log")
+    sink(con, append=TRUE)
+    sink(con, append=TRUE, type="message")
+    
+    sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
+    print(sortedlabel)
     colnames(sortedlabel) <- colnames(labelfreq)
     #print(sortedlabel)
   
     
     table<-sortedlabel
+    sink() 
+    sink(type="message")
     
   },
   rownames = TRUE,
@@ -199,7 +206,7 @@ function(input, output, session){
     labelfreq <- table(protienDSpathway)
     z<-apply(labelfreq,1,sum)
     sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
-    plot_ly(z = sortedlabel, type = "heatmap",colorscale = "Hot") %>% layout(xaxis = list(title="Proteins"),yaxis=list(title="Disease Pathway"))
+    plot_ly(z = sortedlabel, type = "heatmap",text=rownames(sortedlabel),colorscale = "Hot") %>% layout(xaxis = list(title="Proteins"),yaxis=list(title="Disease Pathway"))
   })
   
 }
