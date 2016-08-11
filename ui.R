@@ -16,9 +16,7 @@ sidebar <- dashboardSidebar(
   actionButton("back_button", "Back"),
   actionButton("reset_button", "Reset"),  
   
-  checkboxGroupInput("node_types", "Entities:",
-                     choices = c("Protein" , "Disease", "Chemical"),
-                     selected = c("Protein" , "Disease", "Chemical")),
+
   
   textInput("searchentitiy","Search Protein"),
   actionButton("search_button","Search")
