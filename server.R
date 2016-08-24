@@ -17,6 +17,8 @@ s2 <-rstack()
 s3 <- rstack()
 mp <<- NULL
 sortedlabel<-NULL
+protienDSpathway<<-data.frame()
+
 function(input, output, session){ 
   global <- reactiveValues()
   global$is_comm_graph = TRUE
@@ -45,7 +47,15 @@ function(input, output, session){
     searchelm <- input$searchentitiy
     lbllist <<- c()
     withProgress(message = "Searching ...",value = 0,{
-      getallparentforentity(searchelm)
+      if(grepl(",",searchelm) == FALSE){
+        getallparentforentity(searchelm)
+      }
+      else
+      {
+        res<-unlist(strsplit(searchelm,","))
+        lapply(res,getallparentforentity)
+        
+      }
     })
     lbllist <- unique(lbllist)
     memcommunity<-paste(lbllist,collapse=",")
@@ -66,6 +76,19 @@ function(input, output, session){
                                 message = list(id=tail(row, n=1)))
     }
   })
+  
+  # disease pathway table click
+  observe({
+    row <- input$plotgraph1_rows_selected
+    last_selected_row = tail(row, n=1)
+    print(last_selected_row)
+    if( (!is.null(row)) && (length(row)>=1)){
+      proteins<-protienDSpathway[protienDSpathway$Pathway==unlist(last_selected_row),]$Protein
+      session$sendCustomMessage(type = "commmemmsg" ,
+                                message = list(id=paste(proteins,collapse=",")))
+    }
+  })
+  
   
   
   # back button
@@ -103,28 +126,31 @@ function(input, output, session){
     return(includeHTML("./www/graph.html"))
   })
   
-  # update the summary stats
-  update_stats <- function(){
-    con <- file("./www/data/current_graph.json")
-    open(con)
-    line <- readLines(con, n = 1, warn = FALSE)
-    close(con)
-    x<-fromJSON(line)
-    edges<-x$edges[c('source','target')]
-    vertex_data<-x$nodes[c('id','name','type')]
-    graph <- graph_from_data_frame(edges, directed = FALSE, vertices = vertex_data)
-    
-    
-    nodes <- get.data.frame(graph, what="vertices")
-    nodes$degree <- degree(graph)
-    nodes$pagerank <- page_rank(graph)$vector
-    #if (is_comm_graph==TRUE){
-    colnames(nodes) <- c("Name", "Type", "Degree", "PageRank")
-    #  } else {
-    #colnames(nodes) <- c("Name", "Type", "Comm", "Degree", "PageRank")
-    # }
-    global$nodes <- nodes
-  }
+ # update the summary stats
+  update_stats <- function(){
+    con <- file("./www/data/current_graph.json")
+    open(con)
+    line <- readLines(con, n = 1, warn = FALSE)
+    close(con)
+    x<-fromJSON(line)
+    edges<-x$edges[c('source','target')]
+    vertex_data<-x$nodes[c('id','name','type')]
+    if(nrow(vertex_data) > 1){
+      graph <- graph_from_data_frame(edges, directed = FALSE, vertices =
+vertex_data)
+    
+    nodes <- get.data.frame(graph, what="vertices")
+    nodes$degree <- degree(graph)
+    nodes$pagerank <- page_rank(graph)$vector
+    colnames(nodes) <- c("Name", "Type", "Degree", "PageRank")
+
+    global$nodes <- nodes
+    }
+    else
+    {
+      global$nodes <- NULL
+    }
+  }
   
   # Plot the degree distribution of the current graph
   output$degree_distribution <- renderPlotly({  
@@ -164,49 +190,46 @@ function(input, output, session){
     lf<-NULL
     lbls<-NULL
     
+    # This takes forever. If we can load a previously built object do it; otherwise don't hold your breath
     withProgress(message = "Loading ...",value = 0,{
-    if(is.null(mp))
-      mp <<- getproteinlabeldict()
+      if(is.null(mp)){
+        filename = 'mp.rds'
+        if (file.exists(filename)){
+          mp <<- NULL
+          mp <<- readRDS(filename)
+        } else {
+          mp <<- getproteinlabeldict()
+          saveRDS(mp, file=filename)
+        }
+      }
     })
     if(global$currentCommId==-1)
       return (NULL)
     finallist<-c()
     lbllist <<- c()
     
-
     withProgress(message = "Loading ...",value = 0,{
-    getrawentititesfromComm(global$currentCommId)
+      getrawentititesfromComm(global$currentCommId)
     })
-    labelfreq <- table(protienDSpathway)
-    z<-apply(labelfreq,1,sum)
     
-    con <- file("test.log")
-    sink(con, append=TRUE)
-    sink(con, append=TRUE, type="message")
-    
-    sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
-    print(sortedlabel)
-    colnames(sortedlabel) <- colnames(labelfreq)
-    #print(sortedlabel)
-  
-    
-    table<-sortedlabel
-    sink() 
-    sink(type="message")
-    
+    table <- data.frame(Protein="No pathway data available")
+
+    if (nrow(protienDSpathway)>1){
+      labelfreq <- table(protienDSpathway)
+      if (ncol(labelfreq)>1){
+        z<-apply(labelfreq,1,sum)
+        sortedlabel<-labelfreq[order(as.numeric(z), decreasing=TRUE),]
+        table<-as.data.frame.matrix(sortedlabel)
+      } else {
+        table <- as.data.frame.matrix(labelfreq)
+      }
+      row.names(table) <- strtrim(row.names(table), 50)
+    } 
+    table
   },
   rownames = TRUE,
   selection = "single")
   
   
-  output$plotgraph2 <- renderPlotly({ 
-    withProgress(message = "Loading ...",value = 0,{
-    getrawentititesfromComm(global$currentCommId)
-    })
-    labelfreq <- table(protienDSpathway)
-    z<-apply(labelfreq,1,sum)
-    sortedlabel<-labelfreq[order(z, decreasing=TRUE),]
-    plot_ly(z = sortedlabel, type = "heatmap",text=rownames(sortedlabel),colorscale = "Hot") %>% layout(xaxis = list(title="Proteins"),yaxis=list(title="Disease Pathway"))
-  })
   
 }
