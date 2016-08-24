@@ -13,10 +13,10 @@ sidebar <- dashboardSidebar(
   p("Chemicals are ", span("orange", style = "color:#FF8800")), 
   p("Diseases are ", span("red", style = "color:#CC0000")),
   
-  actionButton("back_button", "Back"),
+  #actionButton("back_button", "Back"),
   actionButton("reset_button", "Reset"),  
   
-
+  
   
   textInput("searchentitiy","Search Protein"),
   actionButton("search_button","Search")
@@ -40,23 +40,14 @@ body <- dashboardBody(
                          width="1000",
                          height="800"),tags$div(id="graph2")
     ),
-    
     tabBox( title = "Details", 
             id = "details",
             selected = "Entities",
             tabPanel("Entities", DT::dataTableOutput("degree_table")),
             tabPanel("Degrees", plotlyOutput("degree_distribution")),
             tabPanel("PageRanks", plotlyOutput("pagerank_distribution")),
-            tabPanel("Disease Pathway Info.", 
-            tabBox(width=500,title="",id="pathinfo",
-                   tabPanel("Data",fluidRow(splitLayout(cellWidths = c("100%", "0%"), dataTableOutput("plotgraph1"))
-            )),
-            tabPanel("Heatmap",plotlyOutput("plotgraph2"))
-            )
-            
+            tabPanel("Disease Pathway Info", fluidRow(splitLayout(cellWidths = c("100%", "0%"), dataTableOutput("plotgraph1"))))      
     )
   )
-  
-)
 )
 dashboardPage(header, sidebar, body, skin = "blue")
